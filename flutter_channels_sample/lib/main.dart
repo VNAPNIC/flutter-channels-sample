@@ -75,7 +75,7 @@ class _WOWZCameraViewState extends State<WOWZCameraView> {
         '$defaultTargetPlatform is not yet supported by the text_view plugin');
   }
 
-  _action(text, event) => RaisedButton(
+  _action(text, event) => RaisedButton(   
       child: Text(text),
       onPressed: () {
         _channel?.invokeMethod(event);

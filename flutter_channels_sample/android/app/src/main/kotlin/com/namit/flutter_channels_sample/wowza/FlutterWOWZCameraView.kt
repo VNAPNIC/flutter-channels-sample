@@ -18,7 +18,6 @@ import com.wowza.gocoder.sdk.api.status.WOWZBroadcastStatus.BroadcastState
 import com.wowza.gocoder.sdk.api.status.WOWZBroadcastStatusCallback
 import com.wowza.gocoder.sdk.support.status.WOWZStatus
 import com.wowza.gocoder.sdk.support.status.WOWZStatusCallback
-import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.platform.PlatformView
@@ -26,7 +25,7 @@ import io.flutter.plugin.platform.PlatformView
 
 class FlutterWOWZCameraView internal
 
-constructor(private val context: Context?, messenger: BinaryMessenger?, id: Int?, params: Map<String, Any>?) :
+constructor(private val context: Context?,private val methodChannel: MethodChannel, id: Int?, params: Map<String, Any>?) :
         PlatformView, MethodChannel.MethodCallHandler, WOWZBroadcastStatusCallback, WOWZStatusCallback {
 
     private val goCoderCameraView: WOWZCameraView = WOWZCameraView(context)
@@ -38,8 +37,6 @@ constructor(private val context: Context?, messenger: BinaryMessenger?, id: Int?
     private var goCoderBroadcaster: WOWZBroadcast? = null
     // The broadcast configuration settings
     private var goCoderBroadcastConfig: WOWZBroadcastConfig? = null
-
-    private val methodChannel: MethodChannel = MethodChannel(messenger, "platform_wowz_camera_view_$id")
 
     init {
         methodChannel.setMethodCallHandler(this)
