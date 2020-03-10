@@ -18,14 +18,13 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         body: Center(
-          child: WOWZCameraView(),
-        ));
+      child: WOWZCameraView(),
+    ));
   }
 
   void _onTextViewCreated(TextViewController controller) {
@@ -48,7 +47,7 @@ class _WOWZCameraViewState extends State<WOWZCameraView> {
   Widget build(BuildContext context) {
     if (defaultTargetPlatform == TargetPlatform.android) {
       return SingleChildScrollView(
-        child: Column(
+        child: Stack(
           children: <Widget>[
             SizedBox(
               height: 720,
@@ -58,9 +57,16 @@ class _WOWZCameraViewState extends State<WOWZCameraView> {
                 onPlatformViewCreated: _onPlatformViewCreated,
               ),
             ),
-            RaisedButton(onPressed: () {
-              _channel?.invokeMethod('start');
-            })
+            Wrap(
+             children: <Widget>[
+               _action('start', 'start'),
+               _action('end', 'end'),
+               _action('resume', 'resume'),
+               _action('pause', 'pause'),
+               _action('switch_camera', 'switch_camera'),
+               _action('flashlight ', 'flashlight '),
+             ],
+            )
           ],
         ),
       );
@@ -69,15 +75,41 @@ class _WOWZCameraViewState extends State<WOWZCameraView> {
         '$defaultTargetPlatform is not yet supported by the text_view plugin');
   }
 
+  _action(text, event) => RaisedButton(
+      child: Text(text),
+      onPressed: () {
+        _channel?.invokeMethod(event);
+      });
+
   void _onPlatformViewCreated(int id) {
-    print('----------------------> $id');
     viewId = id;
     _channel = MethodChannel('platform_wowz_camera_view_$id');
+    _channel.setMethodCallHandler((call) async {
+      print(
+          'MethodCallHandler: \nMethod: ${call.method} \nArguments: ${call.arguments}');
+      switch (call.method) {
+        case 'state':
+          _state(call.arguments);
+          break;
+        case 'error':
+          break;
+      }
+    });
+  }
+
+  _state(arguments) {
+    switch (arguments) {
+      case 'IDLE':
+        break;
+      case 'READY':
+        break;
+      case 'BROADCASTING':
+        break;
+    }
   }
 }
 
 /// TextView
-
 typedef void TextViewCreatedCallback(TextViewController controller);
 
 class TextView extends StatefulWidget {
@@ -106,7 +138,6 @@ class _TextViewState extends State<TextView> {
   }
 
   void _onPlatformTextViewCreated(int id) {
-    print('----------------------> $id');
     if (widget.onTextViewCreated == null) {
       return;
     }
@@ -115,7 +146,6 @@ class _TextViewState extends State<TextView> {
 
   @override
   void dispose() {
-    print('----------------------> dispose');
     super.dispose();
   }
 }

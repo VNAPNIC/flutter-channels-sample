@@ -3,6 +3,7 @@ package com.namit.flutter_channels_sample.wowza
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.wowza.gocoder.sdk.api.WowzaGoCoder
@@ -15,6 +16,8 @@ import com.wowza.gocoder.sdk.api.geometry.WOWZSize
 import com.wowza.gocoder.sdk.api.status.WOWZBroadcastStatus
 import com.wowza.gocoder.sdk.api.status.WOWZBroadcastStatus.BroadcastState
 import com.wowza.gocoder.sdk.api.status.WOWZBroadcastStatusCallback
+import com.wowza.gocoder.sdk.support.status.WOWZStatus
+import com.wowza.gocoder.sdk.support.status.WOWZStatusCallback
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -22,8 +25,9 @@ import io.flutter.plugin.platform.PlatformView
 
 
 class FlutterWOWZCameraView internal
-constructor(val context: Context?, messenger: BinaryMessenger?, id: Int?, params: Map<String, Any>?) :
-        PlatformView, MethodChannel.MethodCallHandler, WOWZBroadcastStatusCallback {
+
+constructor(private val context: Context?, messenger: BinaryMessenger?, id: Int?, params: Map<String, Any>?) :
+        PlatformView, MethodChannel.MethodCallHandler, WOWZBroadcastStatusCallback, WOWZStatusCallback {
 
     private val goCoderCameraView: WOWZCameraView = WOWZCameraView(context)
     // The top-level GoCoder API interface
@@ -33,7 +37,7 @@ constructor(val context: Context?, messenger: BinaryMessenger?, id: Int?, params
     // The GoCoder SDK broadcaster
     private var goCoderBroadcaster: WOWZBroadcast? = null
     // The broadcast configuration settings
-    private var goCoderBroadcastConfig: WOWZBroadcastConfig?=null
+    private var goCoderBroadcastConfig: WOWZBroadcastConfig? = null
 
     private val methodChannel: MethodChannel = MethodChannel(messenger, "platform_wowz_camera_view_$id")
 
@@ -51,7 +55,6 @@ constructor(val context: Context?, messenger: BinaryMessenger?, id: Int?, params
         // Create an audio device instance for capturing and broadcasting audio
         goCoderAudioDevice = WOWZAudioDevice()
 
-        // Create a broadcaster instance
         // Create a broadcaster instance
         goCoderBroadcaster = WOWZBroadcast()
 
@@ -87,10 +90,31 @@ constructor(val context: Context?, messenger: BinaryMessenger?, id: Int?, params
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        Log.i("FlutterWOWZCameraView", "MethodCallHandler: \\nMethod: ${call.method} \\nArguments: ${call.arguments}")
+        val activeCamera = this.goCoderCameraView.camera
+
         when (call.method) {
             "start" -> {
                 // Start streaming
                 goCoderBroadcaster?.startBroadcast(goCoderBroadcastConfig, this)
+            }
+            "resume" -> {
+                Log.i("FlutterWOWZCameraView", "isPreviewPaused: ${goCoderCameraView.isPreviewPaused}")
+                activeCamera.continuePreview()
+            }
+            "end" -> {
+                // Stop the broadcast that is currently broadcasting
+                goCoderBroadcaster?.endBroadcast(this)
+            }
+            "switch_camera" -> {
+                goCoderCameraView.switchCamera()
+            }
+            "pause" -> {
+                if (activeCamera.isPreviewing)
+                    activeCamera.pausePreview()
+            }
+            "flashlight " -> {
+                activeCamera.isTorchOn = !activeCamera.isTorchOn
             }
             else -> result.notImplemented()
         }
@@ -104,25 +128,51 @@ constructor(val context: Context?, messenger: BinaryMessenger?, id: Int?, params
         val statusMessage = StringBuffer("Broadcast status: ")
 
         when (goCoderStatus?.state) {
-            BroadcastState.READY -> statusMessage.append("Ready to begin broadcasting")
-            BroadcastState.BROADCASTING -> statusMessage.append("Broadcast is active")
-            BroadcastState.IDLE -> statusMessage.append("The broadcast is stopped")
+            BroadcastState.READY -> {
+                statusMessage.append("Ready to begin broadcasting")
+            }
+            BroadcastState.BROADCASTING -> {
+                statusMessage.append("Broadcast is active")
+            }
+            BroadcastState.IDLE -> {
+                statusMessage.append("The broadcast is stopped")
+            }
             else -> return
         }
 
         // Display the status message using the U/I thread
-        // Display the status message using the U/I thread
-        Handler(Looper.getMainLooper()).post { Toast.makeText(context, statusMessage, Toast.LENGTH_LONG).show() }
+        Handler(Looper.getMainLooper()).post {
+            methodChannel.invokeMethod("state", goCoderStatus.state?.name)
+            Toast.makeText(context, statusMessage, Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onWZError(goCoderStatus: WOWZBroadcastStatus?) {
-        // If an error is reported by the GoCoder SDK, display a message
-        // containing the error details using the U/I thread
+        methodChannel.invokeMethod("error", goCoderStatus?.lastError?.errorDescription)
+
         // If an error is reported by the GoCoder SDK, display a message
         // containing the error details using the U/I thread
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(context,
                     "Streaming error: " + goCoderStatus?.lastError?.errorDescription,
+                    Toast.LENGTH_LONG).show()
+        }
+    }
+
+
+    override fun onWZStatus(status: WOWZStatus?) {
+        // containing the error details using the U/I thread
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context,
+                    "Streaming WZStatus: " + status?.toString(),
+                    Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onWZError(status: WOWZStatus?) {
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context,
+                    "Streaming nWZError: " + status?.toString(),
                     Toast.LENGTH_LONG).show()
         }
     }
