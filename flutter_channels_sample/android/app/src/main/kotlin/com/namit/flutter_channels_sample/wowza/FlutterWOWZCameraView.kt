@@ -40,7 +40,7 @@ constructor(private val context: Context?,private val methodChannel: MethodChann
 
     init {
         methodChannel.setMethodCallHandler(this)
-        goCoder = WowzaGoCoder.init(context, "GOSK-9A47-010C-8DE7-381D-76DB")
+        goCoder = WowzaGoCoder.init(context, "GOSK-9B47-010C-46D5-5397-1B6F")
         // Set the camera preview to 720p
         goCoderCameraView.frameSize = WOWZSize(1280, 720)
         // Set the cropping mode so that the full frame is displayed, potentially cropped
