@@ -45,34 +45,38 @@ class _WOWZCameraViewState extends State<WOWZCameraView> {
 
   @override
   Widget build(BuildContext context) {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return SingleChildScrollView(
-        child: Stack(
-          children: <Widget>[
-            SizedBox(
+    return SingleChildScrollView(
+      child: Stack(
+        children: <Widget>[
+          SizedBox(
               height: 720,
               width: 1280,
-              child: AndroidView(
-                viewType: 'platform_wowz_camera_view',
-                onPlatformViewCreated: _onPlatformViewCreated,
-              ),
-            ),
-            Wrap(
-             children: <Widget>[
-               _action('start', 'start'),
-               _action('end', 'end'),
-               _action('resume', 'resume'),
-               _action('pause', 'pause'),
-               _action('switch_camera', 'switch_camera'),
-               _action('flashlight ', 'flashlight '),
-             ],
-            )
-          ],
-        ),
-      );
-    }
-    return Text(
-        '$defaultTargetPlatform is not yet supported by the text_view plugin');
+              child: (defaultTargetPlatform == TargetPlatform.android)
+                  ? AndroidView(
+                      viewType: 'platform_wowz_camera_view',
+                      onPlatformViewCreated: _onPlatformViewCreated,
+                    )
+                  : (defaultTargetPlatform == TargetPlatform.iOS)
+                      ? UiKitView(
+                          viewType: 'platform_wowz_camera_view',
+                          onPlatformViewCreated: _onPlatformViewCreated,
+                        )
+                      : Text(
+                          '$defaultTargetPlatform is not yet supported by the text_view plugin')),
+          Wrap(
+            children: <Widget>[
+              _action('start', 'start'),
+              _action('end', 'end'),
+              _action('open_camera', 'open_camera'),
+              _action('resume', 'resume'),
+              _action('pause', 'pause'),
+              _action('switch_camera', 'switch_camera'),
+              _action('flashlight ', 'flashlight '),
+            ],
+          )
+        ],
+      ),
+    );
   }
 
   _action(text, event) => RaisedButton(
