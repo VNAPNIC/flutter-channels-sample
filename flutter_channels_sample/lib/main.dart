@@ -79,7 +79,7 @@ class _WOWZCameraViewState extends State<WOWZCameraView> {
     );
   }
 
-  _action(text, event) => RaisedButton(
+  _action(text, event) => RaisedButton(   
       child: Text(text),
       onPressed: () {
         _channel?.invokeMethod(event);
